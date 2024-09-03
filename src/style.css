@@ -18,9 +18,10 @@ body {
   place-items: center;
 }
 
-#show-toast {
+button#show-toast {
   width: 100%;
   margin-top: 2rem;
+  padding-block: 0.5rem;
 }
 
 label {
@@ -29,4 +30,14 @@ label {
   align-items: baseline;
   margin-bottom: 1rem;
   gap: 1rem;
+  min-width: 300px;
+}
+
+select {
+  padding: 0.25rem;
+}
+
+input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
 }
