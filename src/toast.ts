@@ -5,6 +5,7 @@ export type PalmToastOptions = {
   type?: ToastType
   duration?: number
   dissmissable?: boolean
+  draggable?: boolean
 }
 
 export enum ToastPosition {
@@ -29,6 +30,7 @@ export class PalmToast {
   private readonly type: ToastType
   private readonly duration: number
   private readonly dissmissable: boolean
+  private readonly draggable: boolean
   private toastElement?: HTMLElement
   private timeoutID?: number
   private toastSpacing = 10
@@ -41,6 +43,7 @@ export class PalmToast {
     this.type = options.type ?? ToastType.Default
     this.duration = options.duration ?? 3000
     this.dissmissable = options.dissmissable ?? true
+    this.draggable = options.draggable ?? true
     this.positionModifier =
       this.position === ToastPosition.BottomRight || this.position === ToastPosition.BottomLeft
         ? 'bottom'
@@ -61,6 +64,10 @@ export class PalmToast {
 
     if (this.dissmissable) {
       this.addCloseButton(toast)
+    }
+
+    if (this.draggable) {
+      this.makeDraggable(toast)
     }
 
     return toast
@@ -89,6 +96,12 @@ export class PalmToast {
     `
     closeButton.addEventListener('click', () => this.removeToast())
     toast.appendChild(closeButton)
+  }
+
+  private makeDraggable(toast: HTMLElement) {
+    toast.addEventListener('dragstart', (e: MouseEvent) => {
+      console.log(e)
+    })
   }
 
   private removeToast() {

@@ -1,8 +1,7 @@
 :root {
   /* Primary and Secondary Colors */
-  --toast-bg-color: #333; /* Default background color */
-  --toast-text-color: #fff; /* Default text color */
-  --toast-secondary-bg: #444; /* Secondary background color */
+  --toast-default-bg: #333; /* Default background color */
+  --toast-default-text: #fff; /* Default text color */
 
   /* Status Colors */
   --toast-success-bg: #28a745; /* Success background color */
@@ -26,6 +25,8 @@
   --toast-padding: clamp(10px, 1.5vw + 6px, 14px) clamp(12px, 2vw + 6px, 18px);
   --toast-margin: clamp(6px, 1vw + 4px, 10px);
 
+  --toast-close-size: 24px;
+
   /* Toast sizes */
   --toast-max-w: 400px;
   --toast-min-w: 250px;
@@ -37,8 +38,8 @@
   position: fixed;
   z-index: 1000;
   margin: var(--toast-margin);
-  background-color: var(--toast-bg-color);
-  color: var(--toast-text-color);
+  background-color: var(--toast-bg-color, --toast-default-bg);
+  color: var(--toast-text-color, --toast-default-text);
   border-radius: var(--toast-border-radius);
   box-shadow: var(--toast-box-shadow);
   padding: var(--toast-padding);
@@ -67,23 +68,23 @@
   }
 
   &[toast-type='success'] {
-    background-color: var(--toast-success-bg);
-    color: var(--toast-success-text);
+    --toast-bg-color: var(--toast-success-bg);
+    --toast-text-color: var(--toast-success-text);
   }
 
   &[toast-type='warning'] {
-    background-color: var(--toast-warning-bg);
-    color: var(--toast-warning-text);
+    --toast-bg-color: var(--toast-warning-bg);
+    --toast-text-color: var(--toast-warning-text);
   }
 
   &[toast-type='error'] {
-    background-color: var(--toast-error-bg);
-    color: var(--toast-error-text);
+    --toast-bg-color: var(--toast-error-bg);
+    --toast-text-color: var(--toast-error-text);
   }
 
   &[toast-type='info'] {
-    background-color: var(--toast-info-bg);
-    color: var(--toast-info-text);
+    --toast-bg-color: var(--toast-info-bg);
+    --toast-text-color: var(--toast-info-text);
   }
 
   .toast-body {
@@ -95,7 +96,8 @@
     position: absolute;
     top: 9px;
     right: 9px;
-    inline-size: 22px;
+    inline-size: var(--toast-close-size);
+    block-size: var(--toast-close-size);
     padding: 0;
     background: none;
     border: none;
@@ -106,6 +108,11 @@
 
   .toast-close:hover {
     opacity: 0.8;
+  }
+
+  .toast-close:focus-visible {
+    outline: 1px solid var(--toast-text-color);
+    border-radius: var(--toast-border-radius);
   }
 }
 
