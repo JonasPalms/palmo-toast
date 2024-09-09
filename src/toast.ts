@@ -7,6 +7,7 @@ export type PalmToastOptions = {
   dissmissable?: boolean
   draggable?: boolean
   showTimer?: boolean
+  pauseOnHover?: boolean
 }
 
 export enum ToastPosition {
@@ -33,11 +34,14 @@ export class PalmToast {
   private readonly dissmissable: boolean
   private readonly draggable: boolean
   private readonly showTimer: boolean
+  private readonly pauseOnHover: boolean
   private toastElement?: HTMLElement
   private timeBar?: HTMLElement
+  private closeButton?: HTMLElement
   private toastSpacing = 10
   private positionModifier: 'top' | 'bottom'
   private requestAnimationID?: number
+  private isPaused: boolean = false
 
   constructor(options: PalmToastOptions) {
     this.text = options.text
@@ -48,6 +52,7 @@ export class PalmToast {
     this.dissmissable = options.dissmissable ?? true
     this.draggable = options.draggable ?? true
     this.showTimer = options.showTimer ?? false
+    this.pauseOnHover = options.pauseOnHover ?? true
     this.positionModifier =
       this.position === ToastPosition.BottomRight || this.position === ToastPosition.BottomLeft
         ? 'bottom'
@@ -94,13 +99,13 @@ export class PalmToast {
   }
 
   private addCloseButton(toast: HTMLElement) {
-    const closeButton = document.createElement('button')
-    closeButton.className = 'toast-close'
-    closeButton.innerHTML = `
+    this.closeButton = document.createElement('button')
+    this.closeButton.className = 'toast-close'
+    this.closeButton.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>close</title><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" fill="currentColor" /></svg>
     `
-    closeButton.addEventListener('click', () => this.removeToast())
-    toast.appendChild(closeButton)
+    this.closeButton.addEventListener('click', () => this.removeToast())
+    toast.appendChild(this.closeButton)
   }
 
   private makeDraggable(toast: HTMLElement) {
@@ -109,13 +114,23 @@ export class PalmToast {
 
   private beginTimer() {
     let startTime: number | undefined
-    const updateTimer = (timeStamp: number) => {
+    let pausedStartTime: number | undefined
+    let pausedDuration: number = 0
+    let elapsedTime: number = 0
+
+    // Flags to track hover and focus states
+    let isHoverPaused: boolean = false
+    let isFocusPaused: boolean = false
+
+    const updateTimerLoop = (timeStamp: number) => {
       if (!startTime) {
         startTime = timeStamp
       }
 
-      const elapsed = timeStamp - startTime
-      const remainingTime = Math.max(0, this.duration - elapsed)
+      console.count('calling')
+      elapsedTime = timeStamp - startTime - pausedDuration
+
+      const remainingTime = Math.max(0, this.duration - elapsedTime)
 
       if (this.timeBar) {
         const percentage = (remainingTime / this.duration) * 100
@@ -123,15 +138,67 @@ export class PalmToast {
       }
 
       if (remainingTime > 0) {
-        this.requestAnimationID = requestAnimationFrame(updateTimer)
+        this.requestAnimationID = requestAnimationFrame(updateTimerLoop)
       } else {
         this.removeToast()
       }
     }
 
-    this.requestAnimationID = requestAnimationFrame(updateTimer)
-  }
+    const pauseTimer = () => {
+      if (this.requestAnimationID) {
+        cancelAnimationFrame(this.requestAnimationID)
+        this.requestAnimationID = undefined
+        pausedStartTime = performance.now()
+      }
+    }
 
+    const resumeTimer = () => {
+      if (pausedStartTime) {
+        pausedDuration += performance.now() - pausedStartTime
+        pausedStartTime = undefined
+        this.requestAnimationID = requestAnimationFrame(updateTimerLoop)
+      }
+    }
+
+    const pause = () => {
+      if (!this.isPaused) {
+        this.isPaused = true
+        pauseTimer()
+      }
+    }
+
+    const tryResume = () => {
+      if (!isHoverPaused && !isFocusPaused && this.isPaused) {
+        this.isPaused = false
+        resumeTimer()
+      }
+    }
+
+    // Mouse events for pause/resume
+    if (this.pauseOnHover) {
+      this.toastElement?.addEventListener('mouseenter', () => {
+        isHoverPaused = true
+        pause()
+      })
+      this.toastElement?.addEventListener('mouseleave', () => {
+        isHoverPaused = false
+        tryResume() // Only resume if focus is also not active
+      })
+
+      // Focus events for pause/resume on close button
+      this.closeButton?.addEventListener('focus', () => {
+        isFocusPaused = true
+        pause()
+      })
+      this.closeButton?.addEventListener('blur', () => {
+        isFocusPaused = false
+        tryResume() // Only resume if hover is also not active
+      })
+    }
+
+    // Initially start the timer
+    this.requestAnimationID = requestAnimationFrame(updateTimerLoop)
+  }
   private addTimeBar(toast: HTMLElement) {
     this.timeBar = document.createElement('div')
     this.timeBar.className = 'toast-time-bar'
@@ -143,9 +210,12 @@ export class PalmToast {
 
     this.toastElement.style.opacity = '0'
     this.toastElement.ontransitionend = () => {
-      if (this.requestAnimationID) cancelAnimationFrame(this.requestAnimationID)
       this.toastElement?.remove()
       this.repositionToasts()
+      if (this.requestAnimationID) {
+        cancelAnimationFrame(this.requestAnimationID)
+        this.requestAnimationID = undefined
+      }
     }
   }
 

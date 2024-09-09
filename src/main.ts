@@ -8,6 +8,7 @@ document.querySelector('button')?.addEventListener('click', () => {
   const position = (document.querySelector('#toast-position') as HTMLSelectElement).value
   const dissmissable = (document.querySelector('#dissmissable') as HTMLInputElement).checked
   const duration = (document.querySelector('#duration') as HTMLInputElement).value
+  const pauseOnHover = (document.querySelector('#pauseOnHover') as HTMLInputElement).checked
 
   count++
 
@@ -19,6 +20,7 @@ document.querySelector('button')?.addEventListener('click', () => {
     duration: Number(duration) * 1000,
     dissmissable: dissmissable,
     showTimer: true,
+    pauseOnHover: pauseOnHover,
   })
 
   toast.showToast()

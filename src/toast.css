@@ -123,6 +123,7 @@
     height: 4px;
     width: 100%;
     background-color: var(--toast-text-color);
+    opacity: 0.6;
   }
 }
 
