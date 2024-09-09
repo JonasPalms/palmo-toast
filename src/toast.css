@@ -36,6 +36,7 @@
 .toast {
   cursor: pointer;
   position: fixed;
+  overflow: hidden;
   z-index: 1000;
   margin: var(--toast-margin);
   background-color: var(--toast-bg-color, --toast-default-bg);
@@ -113,6 +114,15 @@
   .toast-close:focus-visible {
     outline: 1px solid var(--toast-text-color);
     border-radius: var(--toast-border-radius);
+  }
+
+  .toast-time-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    width: 100%;
+    background-color: var(--toast-text-color);
   }
 }
 

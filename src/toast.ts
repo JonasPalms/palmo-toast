@@ -6,6 +6,7 @@ export type PalmToastOptions = {
   duration?: number
   dissmissable?: boolean
   draggable?: boolean
+  showTimer?: boolean
 }
 
 export enum ToastPosition {
@@ -31,10 +32,12 @@ export class PalmToast {
   private readonly duration: number
   private readonly dissmissable: boolean
   private readonly draggable: boolean
+  private readonly showTimer: boolean
   private toastElement?: HTMLElement
-  private timeoutID?: number
+  private timeBar?: HTMLElement
   private toastSpacing = 10
   private positionModifier: 'top' | 'bottom'
+  private requestAnimationID?: number
 
   constructor(options: PalmToastOptions) {
     this.text = options.text
@@ -44,6 +47,7 @@ export class PalmToast {
     this.duration = options.duration ?? 3000
     this.dissmissable = options.dissmissable ?? true
     this.draggable = options.draggable ?? true
+    this.showTimer = options.showTimer ?? false
     this.positionModifier =
       this.position === ToastPosition.BottomRight || this.position === ToastPosition.BottomLeft
         ? 'bottom'
@@ -56,11 +60,10 @@ export class PalmToast {
     toast.setAttribute('toast-type', this.type)
     toast.setAttribute('toast-position', this.position)
 
-    const innerHTML = `
+    toast.innerHTML = `
       <strong>${this.heading ?? ''}</strong>
       <p class="toast-body">${this.text}</p>
     `
-    toast.innerHTML = innerHTML
 
     if (this.dissmissable) {
       this.addCloseButton(toast)
@@ -68,6 +71,10 @@ export class PalmToast {
 
     if (this.draggable) {
       this.makeDraggable(toast)
+    }
+
+    if (this.showTimer) {
+      this.addTimeBar(toast)
     }
 
     return toast
@@ -80,9 +87,7 @@ export class PalmToast {
 
       this.repositionToasts()
 
-      this.timeoutID = window.setTimeout(() => {
-        this.removeToast()
-      }, this.duration)
+      this.beginTimer()
     } catch (error) {
       console.error('An error occurred while generating your PalmToast: \n', error)
     }
@@ -94,25 +99,51 @@ export class PalmToast {
     closeButton.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><title>close</title><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" fill="currentColor" /></svg>
     `
-    closeButton.addEventListener('click', () => this.removeToast())
+    closeButton.addEventListener('click', () => this.removeToast)
     toast.appendChild(closeButton)
   }
 
-  private makeDraggable(toast: HTMLElement) {
-    toast.addEventListener('dragstart', (e: MouseEvent) => {
-      console.log(e)
-    })
+  private makeDraggable(toast: HTMLElement) {}
+
+  private beginTimer() {
+    let startTime: number | undefined
+    const updateTimer = (timeStamp: number) => {
+      if (!startTime) {
+        startTime = timeStamp
+      }
+
+      const elapsed = timeStamp - startTime
+      const remainingTime = Math.max(0, this.duration - elapsed)
+
+      if (this.timeBar) {
+        const percentage = (remainingTime / this.duration) * 100
+        this.timeBar.style.width = `${percentage}%`
+      }
+
+      if (remainingTime > 0) {
+        this.requestAnimationID = requestAnimationFrame(updateTimer)
+      } else {
+        this.removeToast()
+      }
+    }
+
+    this.requestAnimationID = requestAnimationFrame(updateTimer)
+  }
+
+  private addTimeBar(toast: HTMLElement) {
+    this.timeBar = document.createElement('div')
+    this.timeBar.className = 'toast-time-bar'
+    toast.appendChild(this.timeBar)
   }
 
   private removeToast() {
-    window.clearTimeout(this.timeoutID)
+    if (!this.toastElement) return
 
-    if (this.toastElement) {
-      this.toastElement.style.opacity = '0'
-      this.toastElement.ontransitionend = () => {
-        this.toastElement?.remove()
-        this.repositionToasts()
-      }
+    this.toastElement.style.opacity = '0'
+    this.toastElement.ontransitionend = () => {
+      if (this.requestAnimationID) cancelAnimationFrame(this.requestAnimationID)
+      this.toastElement?.remove()
+      this.repositionToasts()
     }
   }
 

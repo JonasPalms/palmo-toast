@@ -18,6 +18,7 @@ document.querySelector('button')?.addEventListener('click', () => {
     type: type as ToastType,
     duration: Number(duration) * 1000,
     dissmissable: dissmissable,
+    showTimer: true,
   })
 
   toast.showToast()
