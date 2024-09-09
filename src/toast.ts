@@ -103,7 +103,9 @@ export class PalmToast {
     toast.appendChild(closeButton)
   }
 
-  private makeDraggable(toast: HTMLElement) {}
+  private makeDraggable(toast: HTMLElement) {
+    console.log(toast)
+  }
 
   private beginTimer() {
     let startTime: number | undefined
